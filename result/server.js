@@ -1,15 +1,18 @@
 var express = require('express'),
     async = require('async'),
     { Pool } = require('pg'),
-    cookieParser = require('cookie-parser'),
     app = express(),
     server = require('http').Server(app),
-    io = require('socket.io')(server);
+    io = require('socket.io')(server, {
+        cors: {
+            origin: "*",
+            methods: ["GET", "POST"]
+        }
+    });
 
-var port = process.env.PORT || 4000;
+var port = process.env.PORT || 80;
 
 io.on('connection', function (socket) {
-
   socket.emit('message', { text : 'Welcome!' });
 
   socket.on('subscribe', function (data) {
@@ -63,12 +66,8 @@ function collectVotesFromResult(result) {
   return votes;
 }
 
-app.use(cookieParser());
-app.use(express.urlencoded());
-app.use(express.static(__dirname + '/views'));
-
-app.get('/', function (req, res) {
-  res.sendFile(path.resolve(__dirname + '/views/index.html'));
+app.get('/api/health', function (req, res) {
+  res.status(200).json({status: 'ok'});
 });
 
 server.listen(port, function () {
