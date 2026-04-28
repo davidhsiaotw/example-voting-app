@@ -3,6 +3,16 @@
 # docker-compose v1.27+ required
 
 services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    networks:
+      - front-tier
+    depends_on:
+      vote:
+        condition: service_healthy
+
   vote:
     build: 
       context: ./vote
@@ -11,15 +21,13 @@ services:
       redis:
         condition: service_healthy
     healthcheck: 
-      test: ["CMD", "curl", "-f", "http://localhost"]
+      test: ["CMD", "curl", "-f", "http://localhost/api/options"]
       interval: 15s
       timeout: 5s
       retries: 3
       start_period: 10s
     volumes:
      - ./vote:/usr/local/app
-    ports:
-      - "8080:80"
     networks:
       - front-tier
       - back-tier
@@ -31,11 +39,14 @@ services:
     depends_on:
       db:
         condition: service_healthy 
+    healthcheck: 
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     volumes:
       - ./result:/usr/local/app
-    ports:
-      - "8081:80"
-      - "127.0.0.1:9229:9229"
     networks:
       - front-tier
       - back-tier
