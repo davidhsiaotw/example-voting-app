@@ -20,8 +20,9 @@ io.on('connection', function (socket) {
   });
 });
 
+var dbPassword = process.env.DB_PASSWORD || 'postgres';
 var pool = new Pool({
-  connectionString: 'postgres://postgres:postgres@db/postgres'
+  connectionString: `postgres://postgres:${dbPassword}@db/postgres`
 });
 
 async.retry(
