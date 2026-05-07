@@ -22,7 +22,10 @@ io.on('connection', function (socket) {
 
 var dbPassword = process.env.DB_PASSWORD || 'postgres';
 var pool = new Pool({
-  connectionString: `postgres://postgres:${dbPassword}@db/postgres`
+  connectionString: `postgres://postgres:${dbPassword}@db/postgres`,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 async.retry(
