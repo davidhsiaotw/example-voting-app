@@ -103,11 +103,26 @@ jobs:
           token: ${{ secrets.GITOPS_TOKEN }}
           path: infra
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Fetch Database Password from SSM
+        id: ssm
+        run: |
+          DB_PASSWORD=$(aws ssm get-parameter --name "/voting/db_password" --with-decryption --query "Parameter.Value" --output text)
+          echo "password=$DB_PASSWORD" >> $GITHUB_OUTPUT
+
       - name: Update Kustomize
         env:
           ENV: ${{ needs.setup.outputs.env }}
           TAG: ${{ needs.setup.outputs.tag }}
           ECR_REGISTRY: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+          DB_PASSWORD: ${{ steps.ssm.outputs.password }}
         run: |
           cd infra/k8s-specifications/overlays/$ENV
           
@@ -116,6 +131,10 @@ jobs:
           kustomize edit set image vote=$ECR_REGISTRY/voting-app-vote:$TAG
           kustomize edit set image result=$ECR_REGISTRY/voting-app-result:$TAG
           kustomize edit set image worker=$ECR_REGISTRY/voting-app-worker:$TAG
+          
+          # Update secret generator with DB password
+          kustomize edit remove secret db-secret --ignore-non-existence || true
+          kustomize edit add secret db-secret --from-literal=password="$DB_PASSWORD"
 
       - name: Commit and Push
         run: |
