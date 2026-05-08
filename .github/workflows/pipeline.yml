@@ -42,7 +42,7 @@ jobs:
             TAG="nightly-$(date +'%Y%m%d')"
             ENV="dev"
           else
-            TAG="sha-${GITHUB_SHA::7}"
+            TAG="sha-${GITHUB_SHA:0:7}"
             ENV="dev"
           fi
 
@@ -123,5 +123,10 @@ jobs:
           git config user.name "GitHub Actions CI"
           git config user.email "actions@github.com"
           git add .
-          git commit -m "chore(gitops): update ${{ needs.setup.outputs.env }} to ${{ needs.setup.outputs.tag }}"
-          git push
+          
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(gitops): update ${{ needs.setup.outputs.env }} to ${{ needs.setup.outputs.tag }}"
+            git push
+          else
+            echo "No image tag changes detected; skipping commit."
+          fi
