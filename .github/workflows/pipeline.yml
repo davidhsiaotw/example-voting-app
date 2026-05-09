@@ -40,7 +40,7 @@ jobs:
             ENV="uat"
           elif [ "${{ github.event_name }}" == "schedule" ]; then
             TAG="nightly-$(date +'%Y%m%d')"
-            ENV="dev"
+            ENV="qa"
           else
             TAG="sha-${GITHUB_SHA:0:7}"
             ENV="dev"
@@ -110,7 +110,7 @@ jobs:
           ECR_REGISTRY: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
         run: |
           cd infra/k8s-specifications/overlays/$ENV
-          
+
           # Update images
           kustomize edit set image frontend=$ECR_REGISTRY/voting-app-frontend:$TAG
           kustomize edit set image vote=$ECR_REGISTRY/voting-app-vote:$TAG
