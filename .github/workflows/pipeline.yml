@@ -15,7 +15,7 @@ on:
         required: true
         default: 'dev'
         type: choice
-        options: [dev, uat, prod]
+        options: [dev, qa, uat, prod]
 
 env:
   AWS_REGION: us-east-1
