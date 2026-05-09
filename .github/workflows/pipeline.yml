@@ -103,7 +103,15 @@ jobs:
           token: ${{ secrets.GITOPS_TOKEN }}
           path: infra
 
-      - name: Update Kustomize
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update Kustomize with new image tags and DB password
         env:
           ENV: ${{ needs.setup.outputs.env }}
           TAG: ${{ needs.setup.outputs.tag }}
@@ -111,12 +119,21 @@ jobs:
         run: |
           cd infra/k8s-specifications/overlays/$ENV
 
+          # Fetch DB password from SSM and update Kustomization
+          DB_PASSWORD=$(aws ssm get-parameter --name "/voting/db_password" --with-decryption --query "Parameter.Value" --output text)
+          if [[ -z "$DB_PASSWORD" ]]; then
+            echo "Failed to retrieve DB password from SSM"
+            exit 1
+          fi
+          # The sed command securely replaces the password in kustomization.yaml
+          # It finds the line starting with '  - password=' and replaces everything after 'password='
+          sed -i "s/^\( *-\s*password=\).*/\1$DB_PASSWORD/" kustomization.yaml
+
           # Update images
           kustomize edit set image frontend=$ECR_REGISTRY/voting-app-frontend:$TAG
           kustomize edit set image vote=$ECR_REGISTRY/voting-app-vote:$TAG
           kustomize edit set image result=$ECR_REGISTRY/voting-app-result:$TAG
           kustomize edit set image worker=$ECR_REGISTRY/voting-app-worker:$TAG
-
       - name: Commit and Push
         run: |
           cd infra
