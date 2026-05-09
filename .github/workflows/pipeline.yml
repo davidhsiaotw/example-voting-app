@@ -125,10 +125,9 @@ jobs:
             echo "Failed to retrieve DB password from SSM"
             exit 1
           fi
-          # The sed command securely replaces the password in kustomization.yaml
-          # It finds the line starting with '  - password=' and replaces everything after 'password='
-          echo "Executing sed command: sed -i \"s|^ *-\\s*password=.*|  - password=$DB_PASSWORD|\" kustomization.yaml"
-          sed -i "s|^ *-\\s*password=.*|  - password=$DB_PASSWORD|" kustomization.yaml
+          # The sed command securely replaces the password in db-secret.yaml
+          # It finds the line starting with '  password:' and replaces the value
+          sed -i "s/^\( *password:\).*/\1 $DB_PASSWORD/" infra/k8s-specifications/base/db/db-secret.yaml
 
           # Update images
           kustomize edit set image frontend=$ECR_REGISTRY/voting-app-frontend:$TAG
