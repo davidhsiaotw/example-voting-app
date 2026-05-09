@@ -127,7 +127,8 @@ jobs:
           fi
           # The sed command securely replaces the password in kustomization.yaml
           # It finds the line starting with '  - password=' and replaces everything after 'password='
-          sed -i "s/^\( *-\s*password=\).*/\1$DB_PASSWORD/" kustomization.yaml
+          echo "Executing sed command: sed -i \"s|^ *-\\s*password=.*|  - password=$DB_PASSWORD|\" kustomization.yaml"
+          sed -i "s|^ *-\\s*password=.*|  - password=$DB_PASSWORD|" kustomization.yaml
 
           # Update images
           kustomize edit set image frontend=$ECR_REGISTRY/voting-app-frontend:$TAG
