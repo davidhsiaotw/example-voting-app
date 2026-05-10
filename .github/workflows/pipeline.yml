@@ -127,7 +127,7 @@ jobs:
           fi
           # Base64 encode the password as Kubernetes secrets store data base64 encoded
           ENCODED_DB_PASSWORD=$(echo -n "$DB_PASSWORD" | base64)
-          sed -i "s/^\\( *password:\\s*\\).*$/\\1 $ENCODED_DB_PASSWORD/" infra/k8s-specifications/base/db/db-secret.yaml
+          sed -i "s/^\\( *password:\\s*\\).*$/\\1 $ENCODED_DB_PASSWORD/" ../../base/db/db-secret.yaml
 
           # Update images
           kustomize edit set image frontend=$ECR_REGISTRY/voting-app-frontend:$TAG
