@@ -111,23 +111,13 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Update Kustomize with new image tags and DB password
+      - name: Update Kustomize with new image tags
         env:
           ENV: ${{ needs.setup.outputs.env }}
           TAG: ${{ needs.setup.outputs.tag }}
           ECR_REGISTRY: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
         run: |
           cd infra/k8s-specifications/overlays/$ENV
-
-          # Fetch DB password from SSM and update the plain Secret manifest
-          DB_PASSWORD=$(aws ssm get-parameter --name "/voting/db_password" --with-decryption --query "Parameter.Value" --output text)
-          if [[ -z "$DB_PASSWORD" ]]; then
-            echo "Failed to retrieve DB password from SSM"
-            exit 1
-          fi
-          # Base64 encode the password as Kubernetes secrets store data base64 encoded
-          ENCODED_DB_PASSWORD=$(echo -n "$DB_PASSWORD" | base64)
-          sed -i "s/^\\( *password:\\s*\\).*$/\\1 $ENCODED_DB_PASSWORD/" ../../base/db/db-secret.yaml
 
           # Update images
           kustomize edit set image frontend=$ECR_REGISTRY/voting-app-frontend:$TAG
